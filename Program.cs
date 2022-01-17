@@ -1,32 +1,79 @@
 ﻿using Newtonsoft.Json.Linq;
-using System.Linq;
-using System.Text;
 
 namespace Drinks
 {
     class Program
     {
         private static readonly HttpClient client = new HttpClient();
+        private static string baseUrl = "https://www.thecocktaildb.com/api/json/v1/1/";
 
         static async Task Main(string[] args)
         {
-            await GetCategories();
+            var actions = new Dictionary<int, Func<Task>>
+            {
+                { 1, GetCategories },
+                { 2, GetGlasses },
+                { 3, GetIngredients },
+                { 4, GetAlcoholicContent }
+            };
+
+            Console.WriteLine(HelperMethods.helpMessage);
+            var command = Convert.ToInt32(Console.ReadLine());
+            await actions[command]();
+        }
+
+        private static Task GetAlcoholicContent()
+        {
+            throw new NotImplementedException();
+        }
+
+        private static Task GetIngredients()
+        {
+            throw new NotImplementedException();
+        }
+
+        private static Task GetGlasses()
+        {
+            throw new NotImplementedException();
         }
 
         static async Task GetCategories()
         {
+            string json = await client.GetStringAsync(baseUrl + "list.php?c=list");
+
+            var drinks = JObject.Parse(json)["drinks"]?
+                .Select(drink => drink["strCategory"]).ToArray();
+
             Console.WriteLine("Choose a category:");
-            string json = await client.GetStringAsync("https://www.thecocktaildb.com/api/json/v1/1/list.php?c=list");
+            HelperMethods.DisplayDataAsTable(drinks!);
 
-            var drinks = JObject.Parse(json)["drinks"];
-
-            for (int i = 0; i < drinks!.Count(); i++)
+            try
             {
-                Console.WriteLine(new String('-', 26));
-                Console.WriteLine($"| {i} {drinks?[i]?["strCategory"]}".PadRight(25) + "|");
+                var categoryId = Convert.ToInt32(Console.ReadLine()) - 1;
+                var categoryName = drinks?[categoryId]?.ToString().Replace(" ", "_");
+                await GetCocktailsByCategory(categoryName!);
             }
 
-            Console.WriteLine(new String('-', 26));
+            catch (FormatException)
+            {
+                Console.WriteLine("Please enter a valid number.");
+            }
+
+            catch (IndexOutOfRangeException)
+            {
+                Console.WriteLine("Please enter a number from the given list.");
+            }
+        }
+
+        static async Task GetCocktailsByCategory(string category)
+        {
+            string json = await client.GetStringAsync(baseUrl + "filter.php?c=" + category);
+
+            var cocktails = JObject.Parse(json)["drinks"]?
+                .Select(drink => drink["strDrink"]).ToArray();
+
+            Console.WriteLine("Displaying cocktails for " + category.Replace("_", " "));
+            HelperMethods.DisplayDataAsTable(cocktails!);
         }
     }
 }
