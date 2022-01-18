@@ -22,36 +22,40 @@ namespace Drinks
             await actions[command]();
         }
 
-        private static Task GetAlcoholicContent()
+        static async Task GetAlcoholicContent()
         {
-            throw new NotImplementedException();
+            await ObtainCocktails("Alcoholic", "Choose an option:");
         }
 
-        private static Task GetIngredients()
+        static async Task GetIngredients()
         {
-            throw new NotImplementedException();
+            await ObtainCocktails("Ingredient1", "Choose an Ingredient:");
         }
 
-        private static Task GetGlasses()
+        static async Task GetGlasses()
         {
-            throw new NotImplementedException();
+            await ObtainCocktails("Glass", "Choose a glass:");
         }
 
         static async Task GetCategories()
         {
-            string json = await client.GetStringAsync(baseUrl + "list.php?c=list");
+            await ObtainCocktails("Category", "Choose a category:");
+        }
 
-            var drinks = JObject.Parse(json)["drinks"]?
-                .Select(drink => drink["strCategory"]).ToArray();
+        static async Task ObtainCocktails(string requestType, string message)
+        {
+            var drinks = await GetAllCockTails(requestType);
 
-            Console.WriteLine("Choose a category:");
+            Console.WriteLine(message);
             HelperMethods.DisplayDataAsTable(drinks!);
 
             try
             {
-                var categoryId = Convert.ToInt32(Console.ReadLine()) - 1;
-                var categoryName = drinks?[categoryId]?.ToString().Replace(" ", "_");
-                await GetCocktailsByCategory(categoryName!);
+                var itemId = Convert.ToInt32(Console.ReadLine()) - 1;
+                var itemName = drinks?[itemId]?.ToString().Replace(" ", "_");
+
+                Console.WriteLine($"Displaying cocktails for {drinks?[itemId]}:");
+                await GetCockTailsByFilter($"filter.php?{requestType.ToLower()[0]}={itemName!}");
             }
 
             catch (FormatException)
@@ -65,14 +69,24 @@ namespace Drinks
             }
         }
 
-        static async Task GetCocktailsByCategory(string category)
+        static async Task<JToken[]> GetAllCockTails(string listType)
         {
-            string json = await client.GetStringAsync(baseUrl + "filter.php?c=" + category);
+            string filterUrl = $"{baseUrl}list.php?{listType.ToLower()[0]}=list";
+            string json = await client.GetStringAsync(filterUrl);
+
+            var drinks = JObject.Parse(json)["drinks"]?
+                .Select(drink => drink["str" + listType]).ToArray();
+
+            return drinks!;
+        }
+
+        static async Task GetCockTailsByFilter(string filter)
+        {
+            string json = await client.GetStringAsync(baseUrl + filter);
 
             var cocktails = JObject.Parse(json)["drinks"]?
                 .Select(drink => drink["strDrink"]).ToArray();
 
-            Console.WriteLine("Displaying cocktails for " + category.Replace("_", " "));
             HelperMethods.DisplayDataAsTable(cocktails!);
         }
     }
