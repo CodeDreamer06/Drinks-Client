@@ -18,11 +18,11 @@ What kind of cocktail do you want?
             int longestStringLength = data.Max(item => item.ToString().Length) + 6;
             for (int i = 0; i < data.Count(); i++)
             {
-                Console.WriteLine(new String('-', longestStringLength));
+                Console.WriteLine(new string('-', longestStringLength));
                 Console.WriteLine($"| {i + 1} {data[i]}".PadRight(longestStringLength - 1) + "|");
             }
 
-            Console.WriteLine(new String('-', longestStringLength));
+            Console.WriteLine(new string('-', longestStringLength));
         }
     }
 }
